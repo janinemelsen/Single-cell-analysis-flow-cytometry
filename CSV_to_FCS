@@ -1,0 +1,92 @@
+
+
+###############################
+### LOAD REQUIRED PACKAGES ####
+###############################
+
+library(flowCore)
+library(Biobase)
+library(dplyr)
+
+###############################
+##### LOAD PREPARED DATA ######
+###############################
+
+## Save the the compensated events in the gate of interest per individual sample as a csv file.
+# Set working directory:
+setwd("path_to_your_folder_with_csv_files")
+# Find file names of .csv files in the current working directory:
+filenames <- list.files(pattern = ".csv")
+# Verify:
+filenames
+
+## Defining a function to read a flow cytrometry file in csv format:
+# Each row is a cell, each column is a parameter. In our experience, the flow cytometers sometimes output duplicate entries (listing the same cell twice), we remove these and report.
+read.flow_csv <- function(pathIN){
+  raw <- read.csv(pathIN, sep=";", header=TRUE, stringsAsFactors=FALSE)
+  IND <- which(duplicated(raw))
+  # Check for duplicates and report if found:
+  if(any(duplicated(raw))){
+    cat(paste0("=== Duplicate entries removed in [",pathIN,"]: ",length(IND)," ===\n"))
+    print(head(raw[IND,]))
+    cat("----\n")
+  }
+  return(unique(raw))
+}
+
+# Read all:
+dfs <- sapply(filenames,read.flow_csv,simplify=FALSE)
+
+###############################
+####### TRANSFORMATION ########
+###############################
+
+## Each parameter of interest needs to be arcsinh transformed with an individual cofactor. The cofactor can be deduced from the size of the linear region around zero on a biexponential scale, as plotted in a histogram (in conventional gating software).
+# Define parameters and co-factors for transformations:
+cofactor <- list(CD95=524,CD8=262,CD27=263,CCR7=1787,CD45RA=524,CD3=678,CD49b=898,CD4=915,CD69=830,CD103=504)
+
+## Defining a function to transform:
+# dat is ...
+transf.flow <- function(dat,cofactor){
+  # Check presence headers:
+  if(!all(names(cofactor) %in% colnames(dat))){
+    stop("Not all provided cofactor names are in supplied flow files")
+  }
+  # Append transformed data
+  for(i in 1:length(cofactor)){
+    dat[,paste0(names(cofactor)[[i]],"_t")] <- asinh(dat[,names(cofactor)[[i]]]/cofactor[[i]])
+  }
+  return(dat)
+}
+
+# Transform:
+dfs_t <- sapply(dfs,function(x) transf.flow(x,cofactor),simplify=FALSE)
+
+##############################
+#### REWRITE TO FLOWFRAME ####
+##############################
+
+## Defining a function to rewrite a csv into a flowframe:
+csv_2_ff <- function(dat){
+  # Compute required metadata - column names with description - ranges, min, and max settings
+  meta <- data.frame(name=dimnames(dat)[[2]],
+                     desc=paste(dimnames(dat)[[2]]),
+                     range =(apply(apply(dat,2,range),2,diff)),
+                     minRange = apply(dat,2,min),
+                     maxRange = apply(dat,2,max))
+  # Create flowframe
+  flowframef <- new("flowFrame",exprs=as.matrix(dat),parameters=AnnotatedDataFrame(meta))
+  return(flowframef)
+}
+
+# reWrite:
+dfs_t_ff = sapply(dfs_t,function(x) csv_2_ff(x),simplify=FALSE)
+
+# Create an 'output' folder
+dir.create("Output", showWarnings = FALSE)
+setwd("Output")
+
+#Save flowframe as fcs file using the flowCore package
+mapply(write.FCS, dfs_t_ff, paste0(gsub(".csv",".fcs", names(dfs_t_ff))))
+
+
