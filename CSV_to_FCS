@@ -46,7 +46,6 @@ dfs <- sapply(filenames,read.flow_csv,simplify=FALSE)
 cofactor <- list(CD95=524,CD8=262,CD27=263,CCR7=1787,CD45RA=524,CD3=678,CD49b=898,CD4=915,CD69=830,CD103=504)
 
 ## Defining a function to transform:
-# dat is ...
 transf.flow <- function(dat,cofactor){
   # Check presence headers:
   if(!all(names(cofactor) %in% colnames(dat))){
