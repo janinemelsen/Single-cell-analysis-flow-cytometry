@@ -22,6 +22,7 @@ filenames
 
 ## Defining a function to read a flow cytrometry file in csv format:
 # Each row is a cell, each column is a parameter. In our experience, the flow cytometers sometimes output duplicate entries (listing the same cell twice), we remove these and report.
+# Please check how your csv file is separated and adjust the sep argument in the function if necessary. In this example we import a semicolon separated file.
 read.flow_csv <- function(pathIN){
   raw <- read.csv(pathIN, sep=";", header=TRUE, stringsAsFactors=FALSE)
   IND <- which(duplicated(raw))
