@@ -12,7 +12,7 @@ library(dplyr)
 ##### LOAD PREPARED DATA ######
 ###############################
 
-## Save the the compensated events in the gate of interest per individual sample as a csv file.
+## Save the the compensated events in the gate of interest per individual sample as a csv file (for FlowJo users: select scale values).
 # Set working directory:
 setwd("path_to_your_folder_with_csv_files")
 # Find file names of .csv files in the current working directory:
@@ -79,7 +79,7 @@ csv_2_ff <- function(dat){
   return(flowframef)
 }
 
-# reWrite:
+# rewrite:
 dfs_t_ff = sapply(dfs_t,function(x) csv_2_ff(x),simplify=FALSE)
 
 # Create an 'output' folder
