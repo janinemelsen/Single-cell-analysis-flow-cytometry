@@ -139,7 +139,7 @@ df <- cbind(df, clusters_phenograph)
 
 ## Option B: diffusion map (for our example CD4 T cell dataset this will take approximately 2hours)
 # reduce the K, if computational load is too high [it takes approximately 2 hours for the example dataset of 275856 cells]
-dm <- DiffusionMap(df, vars = c("CD95", "CD8", "CD27", "CCR7", "CD45RA", "CD49B", "CD69", "CD103", "CD3", "CD4"), k=1000, suppress_dpt = TRUE, verbose=TRUE)
+dm <- DiffusionMap(df, vars = c("CD95", "CD8", "CD27", "CCR7", "CD45RA", "CD49b", "CD69", "CD103", "CD3", "CD4"), k=1000, suppress_dpt = TRUE, verbose=TRUE)
 
 # add the diffusion components to the expression data frame (either all by dm@eigenvectors, or a selection by dm$DC1, dm$DC2, etc.)
 df <- cbind(df, DC1=dm$DC1, DC2=dm$DC2, DC3=dm$DC3)
