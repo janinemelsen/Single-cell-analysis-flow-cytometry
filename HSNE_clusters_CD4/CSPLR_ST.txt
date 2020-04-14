@@ -1,0 +1,8 @@
+C:/Users/jemelsen/Desktop/addcofactor150tofiles/CD3_B.fcs: 0
+C:/Users/jemelsen/Desktop/addcofactor150tofiles/CD3_L.fcs: 1
+C:/Users/jemelsen/Desktop/addcofactor150tofiles/CD3_R.fcs: 2
+C:/Users/jemelsen/Desktop/addcofactor150tofiles/CD3_N.fcs: 3
+C:/Users/jemelsen/Desktop/addcofactor150tofiles/CD3_M.fcs: 4
+C:/Users/jemelsen/Desktop/addcofactor150tofiles/CD3_K.fcs: 5
+C:/Users/jemelsen/Desktop/addcofactor150tofiles/CD3_W.fcs: 6
+C:/Users/jemelsen/Desktop/addcofactor150tofiles/CD3_F.fcs: 7
