@@ -1,0 +1,256 @@
+---
+title: "Clustering, dimensionality reduction and pseudotime calculation"
+author: "Janine Melsen"
+date: "08/04/2020"
+output: html_document
+---
+
+In this markdown document, we will demonstrate how you can calculate clusters, perform dimensionality reduction, and infer cellular trajectories (pseudotime).
+
+As input, we load the fcs files containing the HSNE-based CD4 clusters (as exported from Cytosplore). We will perform alternative clustering methods (flowsom, phenograph), and alternative dimensionality reduction methods (umap, diffusion map)  Lastly, we infer a cellular trajectory by Slingshot. The output of this markdown document is a csv file containing all the above information, including the expression values of each cell. By running this markdown document the df.csv file on the GitHub repository can be reproduced.
+
+This csv file can be used for further visulization purposes, as described in the visualization markdown.
+
+## Load packages
+```{r,warning=FALSE, message=FALSE, error=FALSE}
+library(flowCore)
+library(FlowSOM)
+library(SingleCellExperiment)
+library(dplyr)
+library(ggplot2)
+library(scales)
+library(reshape2)
+library(RColorBrewer)
+library(destiny)
+library(uwot)
+library(slingshot)
+library(cytofkit2)
+library(ggrepel)
+```
+
+## Load data
+
+Load the (transformed, normalized, unclustered) FCS files from the 'CSV_to_transformed_normalized_FCS' R script or load fcs files which where clustered in Cytosplore (in this case each fcs file is 1 cluster). 
+
+Here, we load the clustered fcs files (as stored in the 'HSNE_clusters_CD4' folder)
+
+Provide the directory of the fcs files
+```{r dirFCS}
+dirFCS = '//vf-d3-home/d3home$/jemelsen/MyDocs/GitHub/Single-cell-analysis-flow-cytometry/HSNE_clusters_CD4'
+```
+
+Optional: when loading clustered fcs files from cytosplore, provide the directory of the text file 'CSPLR_ST.txt'. Cytosplore exports this file upon running the HSNE. This file contains the decoding of the sample numbers.
+```{r sampletag code directory}
+pathST = '//vf-d3-home/d3home$/jemelsen/MyDocs/GitHub/Single-cell-analysis-flow-cytometry/HSNE_clusters_CD4/CSPLR_ST.txt'
+```
+
+```{r define function, message=FALSE, warning=FALSE}
+## Defining a function to read multiple fcs files from a directory 'dir' into a single data.frame:
+# NB: The column in the output named 'fileName' tracks the original file where each cell came from.
+# Optionally perform remapping of column 'CSPLR_ST' holding cytosplore sample numbers to actual names:
+read.flowdat <- function(dir,path_CSPLR_ST=""){
+  # Read:
+  filepaths <- list.files(path=dir,pattern = ".fcs", full.names=TRUE)
+  flowset <- read.flowSet(files=filepaths, transformation=FALSE, truncate_max_range = FALSE)
+  # Transform to data frame:
+  x <- as.data.frame(exprs(as(flowset,'flowFrame')),stringsAsFactors=FALSE)
+  # Map column 'Original' to filename (in this case holding clusters of HSNE):
+  filenames <- gsub("[.fcs]","",list.files(path=dir,pattern = ".fcs", full.names=FALSE))
+  names(filenames) <- sort(unique(x$Original))
+  x$fileName <- filenames[as.character(x$Original)]
+  # Remove column 'Original':
+  x <- x[,-which(colnames(x)=="Original")]
+  # Optionally remap Cytosplore sample tags to original filename:
+  if(file.exists(path_CSPLR_ST)){
+    # Read:
+    sampID <- gsub(".fcs","",basename(sapply(strsplit(readLines(path_CSPLR_ST),": "),function(x) x[1])))
+    names(sampID) <- sapply(strsplit(readLines(path_CSPLR_ST),": "),function(x) x[2])
+    x$sampleID <- sampID[as.character(x$CSPLR_ST)]
+  }
+  return(x)
+}
+```
+
+Read fcs files
+```{r read fcs files, include=FALSE}
+df <- read.flowdat(dir=dirFCS,path_CSPLR_ST = pathST)
+```
+
+```{r}
+head(df)
+```
+
+Optional: in case you loaded the clustered fcsfiles, the filename refers to the cluster. Therefore we change the column name 'fileName' to 'clusters_HSNE'
+```{r change filename column}
+colnames(df)[which(colnames(df)=="fileName")] <- "clusters_HSNE"
+```
+
+In our example we just loaded the 275856 CD4 T cells, as clustered by HSNE-based gaussian mean shift clustering in Cytosplore.
+
+## Clustering
+
+### Clustering by flowsom
+
+Check colnames, to determine which one you would like to use for the clustering
+```{r parameters flowsom}
+colnames(df)
+```
+
+Provide the column numbers, and choose the number of clusters
+```{r flowsom, include=FALSE, message=FALSE, warning=FALSE}
+flowsom <- FlowSOM(input = dirFCS, 
+                transform = FALSE,
+                scale = FALSE,
+                colsToUse = c(7:9, 11, 13:16,18,19),
+                nClus = 14,
+                seed = 100)
+```
+
+Retrieve the cluster assignment per cell and add the flowsom clusters to the data frame
+```{r add clusters to df, message=FALSE, warning=FALSE}
+clusters_flowsom <- as.factor(flowsom$FlowSOM$map$mapping[,1])
+levels(clusters_flowsom) <- flowsom$metaclustering
+
+df <- cbind(df, clusters_flowsom)
+```
+
+### clustering by Phenograph
+
+Provide the columns you would like to use and set the k nearest neighbours. The higher the k, the lower the number of clusters.
+```{r phenograph}
+phenograph <- Rphenograph(df[,c(7:9,11, 13:16,18,19)], k=50)
+```
+
+
+Add the phenograph clusters to the data frame
+```{r add clusters pheno to df, message=FALSE, warning=FALSE}
+clusters_phenograph <- as.factor(phenograph$membership)
+df <- cbind(df, clusters_phenograph)
+```
+
+## Dimensionality reduction
+
+### Diffusion map
+
+Provide the columns which you would like use for the diffusion map
+Reduce k if computational load is too high
+```{r diffusion map}
+dm <- DiffusionMap(df, vars = c("CD95", "CD8", "CD27", "CCR7", "CD45RA", "CD49b", "CD69", "CD103", "CD3", "CD4"), k=10, suppress_dpt = TRUE, verbose=TRUE)
+```
+Generate a plot: each cell is colored by its flowsom cluster
+```{r ggplot dm}
+ggplot(dm, aes(x=DC1, y=DC2, color=as.factor(clusters_flowsom)))+geom_point()
+```
+
+Add the diffusion components to the data frame
+```{r add dc to df}
+df <- cbind(df, DC1=dm$DC1, DC2=dm$DC2, DC3=dm$DC3)
+```
+
+### UMAP
+
+Select the columns which you would like to use for the UMAP
+n_neighbors controls how UMAP balances local versus global structure in the data
+min_dist controls how tightly UMAP is allowed to pack points together (low values = clumpier embedding)
+```{r calculate umap}
+umap <- umap(df[,c(7:9, 11, 13:16, 18, 19)], n_neighbors = 30, min_dist=0.001, verbose=TRUE)
+```
+
+Plot the umap: each cell is colored by its phenograph cluster
+```{r ggplot umap}
+ggplot (as.data.frame(umap), aes(x=V1, y=V2, color=as.factor(clusters_phenograph)))+geom_point()+xlab('UMAP_1')+ylab('UMAP_2')
+```
+
+Add the umap coordinates to the data frame
+```{r add umap to df}
+umap<- as.data.frame(umap)
+colnames(umap) <- c('umap_1', 'umap_2')
+df <- cbind(df,umap)
+```
+
+### Pseudotime
+
+Slingshot requires clusters as input for lineage identification. 
+Too many clusters will lead to artificial lineages, therefore we merge clusters and relabel them
+
+If you would like to use other clusters, adjust df$clusters_HSNE and merge the clusters accordingly.
+
+```{r merge clusters}
+df$merged_HSNE <-gsub("CD4-1$", "Naive", df$clusters_HSNE)
+df$merged_HSNE <-gsub("CD4-2$", "Naive", df$merged_HSNE)
+df$merged_HSNE <-gsub("CD4-3$", "CD27+ CM", df$merged_HSNE)
+df$merged_HSNE <-gsub("CD4-4$", "CD27+ CM", df$merged_HSNE)
+df$merged_HSNE <-gsub("CD4-5$", "CD27+ EM", df$merged_HSNE)
+df$merged_HSNE <-gsub("CD4-6$", "CD27+ EM", df$merged_HSNE)
+df$merged_HSNE <-gsub("CD4-7$", "CD27- EM", df$merged_HSNE)
+df$merged_HSNE <-gsub("CD4-8$", "CD27- EM", df$merged_HSNE)
+df$merged_HSNE <-gsub("CD4-9$", "EMRA", df$merged_HSNE)
+df$merged_HSNE <-gsub("CD4-10$", "EMRA", df$merged_HSNE)
+df$merged_HSNE <-gsub("CD4-11$", "CD8dim EMRA", df$merged_HSNE)
+df$merged_HSNE <-gsub("CD4-12$", "CD8dim EM", df$merged_HSNE)
+df$merged_HSNE <-gsub("CD4-13$", "CD69+CD103- EM", df$merged_HSNE)
+df$merged_HSNE <-gsub("CD4-14$", "CD103+ EM", df$merged_HSNE)
+```
+
+Create slingshot object
+```{r create slingshot object}
+slingshot_object <- SingleCellExperiment(assays = List(norm = as.matrix(t(df))))
+```
+
+Add data frame to slingshot object and select the markers you would like to use for the pseudotime calculation
+```{r}
+reducedDims(slingshot_object) <- SimpleList(expressiondata = as.matrix(df%>%select(c("CD95", "CD8", "CD27", "CCR7", "CD45RA", "CD49b", "CD69", "CD103", "CD3", "CD4"))))
+```
+
+Select the clusters to use for the pseudotime calculation
+```{r select clusters}
+colData(slingshot_object)$clusters <- df$merged_HSNE
+```
+
+Calculate lineages and appoint starting cluster (optionally)
+```{r calculate lineages, message=FALSE, warning=FALSE}
+lin <- getLineages(reducedDims(slingshot_object)$expressiondata,colData(slingshot_object)$clusters, start.clus='Naive')
+
+```
+
+Construct smooth curves (to reduce computational time curves can be approximated by a fixed number of points, for instance 100)
+```{r construct curves}
+curve <- getCurves(lin, approx_points=100)
+```
+
+Add pseudotime values to the data frame
+```{r pseudotime to df}
+df <- cbind(df, as.data.frame(slingPseudotime(curve), row.names=FALSE))
+```
+
+Generate table with diffusion map coordinates, pseudotimevalues and cluster assignment
+```{r table with pseudodtime values}
+pseudotimevalues <- df%>%select(c(DC1, DC2,clusterID=merged_HSNE, curve1, curve2, curve3))
+```
+
+Plot the lineages: cells are colored by pseudotime
+```{r plot lineages}
+#reshape table 
+pseudotimevalues <- melt(pseudotimevalues, id.vars=c('clusterID', 'DC1', 'DC2'), variable.name='lineage', value.name = 'pseudotime')
+
+#rename curve to lineage
+pseudotimevalues$lineage <- gsub('curve','lineage', pseudotimevalues$lineage)
+
+#exclude cells with NA pseudotimevalues (those cells are not present in all lineages and have NA values for the lineages in which they are absent)
+pseudotimevaluesexclNA <- pseudotimevalues%>%filter(pseudotime!='NA')
+
+#generate colorpalette
+colors <- colorRampPalette(rev(brewer.pal(11, 'Spectral'))[-6])(100)
+
+#ggplot of each lineage colored by either pseudotime
+ggplot(pseudotimevaluesexclNA%>%arrange(pseudotime), aes(x=DC1, y=DC2))+geom_point(aes(color=pseudotime),size=0.1, alpha=0.3) +facet_wrap(~lineage)+scale_color_gradientn(colours=colors)+theme_bw()+theme(panel.grid.major = element_blank(), panel.grid.minor=element_blank())
+
+```
+
+save final df file
+```{r save df}
+write.csv(df, 'df.csv')
+```
+
+
+

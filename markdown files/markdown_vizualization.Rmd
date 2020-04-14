@@ -1,0 +1,199 @@
+---
+title: "Visualization"
+author: "Janine Melsen"
+date: "08/04/2020"
+output: html_document
+---
+
+In this markdown document, we will demonstrate how you could visualize the different methods for clustering and dimensionality reduction, as stored in the data frame (the output from the clustering_dimensionalityreduction_pseudotime script/markdown)
+
+As input we will use the deposited 'df.csv' file, which contains the expression values of 275856 CD4 T cells, HSNE-based clustres, flowsom clusters, phenograph clusters, umap coordinates, diffusion map coordinates and pseudotime values.
+
+## Load packages
+```{r library, warning=FALSE, message=FALSE, error=FALSE}
+library(dplyr)
+library(ggplot2)
+library(scales)
+library(reshape2)
+library(RColorBrewer)
+library(ggrepel)
+```
+
+
+## Load dataframe
+
+```{r load data, echo=FALSE}
+df<- read.csv('//vf-d3-home/d3home$/jemelsen/MyDocs/GitHub/Single-cell-analysis-flow-cytometry/df.csv', row.names=1)
+
+head(df)
+```
+
+
+## Visualization
+### Visualize parameters on diffusion map
+
+Define a function for visualization of the diffusion map
+```{r visualization function}
+viz.dm <- function(dat,dr, param.name,limits=NULL){
+  ColVal <- dat[,param.name]
+  if(is.null(limits)){
+    Lim <- quantile(ColVal,probs=seq(0,1,0.01))[c(2,100)]
+    p <- ggplot(dat, aes(x = DC1, y =DC2)) +geom_point(aes(color = ColVal), size=0.1)+theme_classic()+scale_color_distiller(name=param.name, palette = "RdYlBu", limits=Lim, oob=squish)+theme_bw()+theme(panel.grid.major = element_blank(), panel.grid.minor=element_blank())+ggtitle(param.name)
+  } else {
+    p <- ggplot(dat, aes(x = DC1, y = DC2)) +geom_point(aes(color = ColVal), size=0.1)+theme_classic()+scale_color_distiller(name=param.name, palette = "RdYlBu", limits=c(limits[1],limits[2]), oob=squish)+theme_bw()+theme(panel.grid.major = element_blank(), panel.grid.minor=element_blank())+ggtitle(param.name)
+  }
+  p
+}
+```
+
+Define the parameters for which you would like generate plots
+First check the order of columns
+```{r parameter definition}
+colnames(df)
+```
+
+Provide the column numbers
+```{r define parameters}
+parameters = colnames(df)[c(7:9, 11, 13:16,18,19)]
+```
+
+Visualize the parameters on the diffusion map
+```{r vizualize dm, fig.height=3, fig.width=4.5}
+for (i in 1:length(parameters)){
+  p=viz.dm(dat=df, param.name = parameters[i])
+  print(p)
+}
+```
+
+If you are not satisfied with the color scale, adjust the limits argument
+```{r use limits,fig.height=3, fig.width=4.5}
+viz.dm(dat=df,param.name='CD8', limits=c(-0.36,4.32))
+viz.dm(dat=df, param.name='CD103', limits=c(-0.38, 3.16))
+```
+
+### visualize clusters on diffusion map
+
+```{r clusters diffusion map, message=FALSE, fig.height=3, fig.width=4}
+label_HSNE_dm <- df%>%group_by(clusters_HSNE)%>%select(DC1, DC2)%>%summarize_all(mean)
+label_flowsom_dm <- df%>%group_by(clusters_flowsom)%>%select(DC1, DC2)%>%summarize_all(mean)
+label_pheno_dm <- df%>%group_by(clusters_phenograph)%>%select(DC1, DC2)%>%summarize_all(mean)
+
+ggplot(df, aes(x=DC1, y=DC2, color=as.factor(clusters_HSNE)))+geom_point(size=0.1)+theme_bw()+theme(panel.grid.major = element_blank(), panel.grid.minor=element_blank())+geom_label_repel(aes(label=clusters_HSNE), data=label_HSNE_dm)+guides(colour=FALSE)+ggtitle('clusters HSNE')
+
+ggplot(df, aes(x=DC1, y=DC2, color=as.factor(clusters_flowsom)))+geom_point(size=0.1)+theme_bw()+theme(panel.grid.major = element_blank(), panel.grid.minor=element_blank())+geom_label_repel(aes(label=clusters_flowsom), data=label_flowsom_dm)+guides(colour=FALSE)+ggtitle('clusters flowsom')
+
+ggplot(df, aes(x=DC1, y=DC2, color=as.factor(clusters_phenograph)))+geom_point(size=0.1)+theme_bw()+theme(panel.grid.major = element_blank(), panel.grid.minor=element_blank())+geom_label_repel(aes(label=clusters_phenograph), data=label_pheno_dm)+guides(colour=FALSE)+ggtitle('clusters phenograph')
+
+```
+
+### visualize parameters on umap
+
+Define a function for visualization of the umap
+```{r parameters umap, echo=FALSE}
+viz.umap <- function(dat,param.name,limits=NULL){
+  ColVal <- dat[,param.name]
+  if(is.null(limits)){
+    Lim <- quantile(ColVal,probs=seq(0,1,0.01))[c(2,100)]
+    p <- ggplot(dat, aes(x = umap_1, y =umap_2)) +geom_point(aes(color = ColVal), size=0.1)+theme_classic()+scale_color_distiller(name=param.name, palette = "RdYlBu", limits=Lim, oob=squish)+theme_bw()+theme(panel.grid.major = element_blank(), panel.grid.minor=element_blank())+ggtitle(param.name)
+  } else {
+    p <- ggplot(dat, aes(x = umap_1, y = umap_2)) +geom_point(aes(color = ColVal), size=0.1)+theme_classic()+scale_color_distiller(name=param.name, palette = "RdYlBu", limits=c(limits[1],limits[2]), oob=squish)+theme_bw()+theme(panel.grid.major = element_blank(), panel.grid.minor=element_blank())+ggtitle(param.name)
+  }
+  p
+}
+
+```
+
+Visualize the parameters on the umap
+```{r vizualize umap, fig.height=3, fig.width=4}
+for (i in 1:length(parameters)){
+  p=viz.umap(dat=df, param.name = parameters[i])
+  print(p)
+}
+```
+
+If you are not satisfied with the color scale, adjust the limits argument
+```{r use limits umap, fig.height=3, fig.width=4}
+viz.umap(dat=df,param.name='CD8', limits=c(-0.36,4.32))
+viz.umap(dat=df, param.name='CD103', limits=c(-0.38, 3.16))
+```
+
+
+### visualize clusters on umap
+
+```{r warning=FALSE, message=FALSE, fig.height=3, fig.width=4}
+label_HSNE_umap <- df%>%group_by(clusters_HSNE)%>%select(umap_1, umap_2)%>%summarize_all(mean)
+label_flowsom_umap <- df%>%group_by(clusters_flowsom)%>%select(umap_1, umap_2)%>%summarize_all(mean)
+label_pheno_umap <- df%>%group_by(clusters_phenograph)%>%select(umap_1, umap_2)%>%summarize_all(mean)
+
+ggplot(df, aes(x=umap_1, y=umap_2, color=as.factor(clusters_HSNE)))+geom_point(size=0.1)+theme_bw()+theme(panel.grid.major = element_blank(), panel.grid.minor=element_blank())+geom_label_repel(aes(label=clusters_HSNE), data=label_HSNE_umap)+guides(colour=FALSE)+ggtitle('clusters HSNE')
+
+ggplot(df, aes(x=umap_1, y=umap_2, color=as.factor(clusters_flowsom)))+geom_point(size=0.1)+theme_bw()+theme(panel.grid.major = element_blank(), panel.grid.minor=element_blank())+geom_label_repel(aes(label=clusters_flowsom), data=label_flowsom_umap)+guides(colour=FALSE)+ggtitle('clusters flowsom')
+
+ggplot(df, aes(x=umap_1, y=umap_2, color=as.factor(clusters_phenograph)))+geom_point(size=0.1)+theme_bw()+theme(panel.grid.major = element_blank(), panel.grid.minor=element_blank())+geom_label_repel(aes(label=clusters_phenograph), data=label_pheno_umap)+guides(colour=FALSE)+ggtitle('clusters phenograph')
+```
+
+### Frequencies
+
+Fill in for which clusters you would like to calculate the frequencies (either clusters_HSNE, clusters_flowsom, or clusters_phenograph)
+```{r counts df}
+counts <- as.data.frame.matrix(table(df$sampleID,df$clusters_HSNE))
+```
+
+Calculate the percentage of a certain sample present in a certain cluster
+```{r counts}
+counts_percofsample = counts/rowSums(counts)*100
+counts_percofsample$total <- rowSums(counts)
+counts_percofsample$sampleID <- row.names(counts_percofsample)
+counts_percofsample <- melt(counts_percofsample,  id.vars=c('sampleID', 'total'), variable.name='cluster', value.name='frequency')
+```
+
+Plot the frequencies in a boxplot (frequency = % of sample in cluster)
+```{r boxplot}
+ggplot(counts_percofsample, aes(x=reorder(cluster, frequency, FUN=median), y=frequency))+ geom_boxplot(position='dodge2', outlier.shape=NA)+geom_jitter(aes(colour=sampleID), size=2)+xlab('cluster')
+```
+
+
+Plot the frequencies in bargraphs (frequency = % of sample in cluster)
+```{r, echo=FALSE}
+ggplot(counts_percofsample, aes(x=cluster, y=frequency, fill=cluster))+geom_bar(stat='identity')+facet_wrap(~sampleID)+theme(axis.text.x=element_text(angle=30, vjust=.9, hjust=1))
+```
+
+### Visualize pseudotime
+
+######If you would like to use other clusters, adjust 'merged_HSNE' to clusters_flowsom', for instance
+######If there are more or less lineages identified adjust the number of curve columns
+```{r pseudotime}
+pseudotimevalues <- df%>%select(c(DC1, DC2,clusterID=merged_HSNE, curve1, curve2, curve3))
+```
+
+Plot the lineages: cells are colored by pseudotime
+```{r plot lineages}
+#reshape table 
+pseudotimevalues <- melt(pseudotimevalues, id.vars=c('clusterID', 'DC1', 'DC2'), variable.name='lineage', value.name = 'pseudotime')
+
+#rename curve to lineage
+pseudotimevalues$lineage <- gsub('curve','lineage', pseudotimevalues$lineage)
+
+#exclude cells with NA pseudotimevalues (those cells are not present in all lineages and have NA values for the lineages in which they are absent)
+pseudotimevaluesexclNA <- pseudotimevalues%>%filter(pseudotime!='NA')
+
+#generate colorpalette
+colors <- colorRampPalette(rev(brewer.pal(11, 'Spectral'))[-6])(100)
+
+#ggplot of each lineage colored by either pseudotime
+ggplot(pseudotimevaluesexclNA%>%arrange(pseudotime), aes(x=DC1, y=DC2))+geom_point(aes(color=pseudotime),size=0.1, alpha=0.3) +facet_wrap(~lineage)+scale_color_gradientn(colours=colors)+theme_bw()+theme(panel.grid.major = element_blank(), panel.grid.minor=element_blank())
+```
+
+Plot the lineages: cells are colored by clusterID
+```{r, fig.height=3, fig.width=10}
+ggplot(pseudotimevaluesexclNA%>%arrange(pseudotime), aes(x=DC1, y=DC2))+geom_point(aes(color=clusterID),size =0.1)+facet_wrap(~lineage)+theme_bw()+ guides(colour = guide_legend(override.aes = list(size=5)))
+```
+
+
+Jitterplot, color cells by clusterID
+
+```{r jitterplot, echo=FALSE, fig.height=3, fig.width=6}
+#jitterplot of pseudotimevalues per lineage
+ggplot(pseudotimevaluesexclNA%>%arrange(pseudotime), aes(x=pseudotime, y=lineage)) + geom_jitter(aes(color=clusterID), size=0.1)+theme_bw()+theme(panel.grid.major = element_blank(), panel.grid.minor=element_blank())+ guides(colour = guide_legend(override.aes = list(size=5)))
+```
+
