@@ -190,7 +190,7 @@ ggplot(pseudotimevaluesexclNA%>%arrange(pseudotime), aes(x=DC1, y=DC2))+geom_poi
 ```
 
 
-Jitterplot per lineage: ells are colored by clusterID
+Jitterplot per lineage: cells are colored by clusterID
 ```{r jitterplot, fig.height=3, fig.width=6}
 ggplot(pseudotimevaluesexclNA%>%arrange(pseudotime), aes(x=pseudotime, y=lineage)) + geom_jitter(aes(color=clusterID), size=0.1)+theme_bw()+theme(panel.grid.major = element_blank(), panel.grid.minor=element_blank())+ guides(colour = guide_legend(override.aes = list(size=5)))
 ```
