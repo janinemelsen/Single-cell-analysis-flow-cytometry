@@ -1,21 +1,29 @@
 # Single-cell-analysis-flow-cytometry
 To reveal the cellular heterogeneity within flow cytometric data, clustering analysis and pseudotime analysis can be performed. Visualization can performed by dimensionality reduction. Here we demonstrate the different steps required to perform these analyses.
 
-1. Data preprocessing (compensations, export population, transformation and normalization.
+### 1. Data preprocessing (compensation, export population, transformation and normalization)
+[R script](scripts/CSV_to_transformed_normalized_FCS_git.R)
 
---> CSV_to_transformed_normalized_fcs R script
 
-2. Clustering, dimensionality reduction, pseudotime
+### 2. Clustering, dimensionality reduction, pseudotime
+[R script](scripts/clustering_dimensionalityreduction_pseudotime_git.R)
 
---> clustering_dimensionalityreduction_pseudotime R script
---> clustering_dimensionalityreduction_pseudotime R markdown
 
-As an example we uploaded the transformed and normalized fcs files from dataset FR-FCM-ZYQ9, as published at the flowRepository. 
+As an example we applied our workflow on fcs files downloaded from the flowRepository (dataset FR-FCM_ZYQ9). Data was compensated in Kaluza, and the live single CD3+ T cells were exported as csv, and further prepocessed by use of the [script](scripts/CSV_to_transformed_normalized_FCS_git.R). We uploaded [the transformed and normalized fcs files](transformed_normalized_CD3/).
+Those fcs files were used as input for HSNE-based Gaussian Mean Shift Clustering in Cytosplore. We clustered the CD4 T cells, and exported the clusters as [fcs files](HSNE_clusters_CD4/)
 
-Data was clustered by HSNE-based Gaussean Mean shift (GMS) clustering in Cytosplore. Each cluster was exported as fcs file and uploaded.
-The data frame df, includes all tranformed and normalized expression values, clustering assignments by flowsom, phenograph and HSNE-based GMS, reduced dimensions (diffusion map, umap), and pseudotime values.
+By use of [this script](scripts/clustering_dimensionalityreduction_pseudotime_git.R) we performed alternative dimensionality reduction methods (diffusion map, umap), alternative clustering methods (flowsom, phenograph) and inferred a cellular trajectory (slingshot). The results of this script are saved in [this data frame](df.csv)
 
-By applying the R markdown document 'visualization' figures can be reproduced.
+The results can be reproduced by loading the [clustered fcs files](HSNE_clusters_CD4/) and use of this [R markdown file](markdowns/clustering_dimensionalityreduction_pseudotime.RMD)
+
+The figures can be reproduced by loading the [data frame](df.csv) and use of this [R markdown file](markdowns/visualization.RMD) 
+
+To view the knitted markdown files click [here](markdown/)
+
+### Downloading the files
+To  download all the files go the green button at the right top of the page, and click Download ZIP. If you would like to use our (clustered) fcs files, please note the location where you store the files. To run the scripts, you need to provide the directory where the files are stored.
+
+
 
 
 
