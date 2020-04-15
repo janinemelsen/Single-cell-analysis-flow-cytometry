@@ -14,9 +14,9 @@ Those fcs files were used as input for HSNE-based Gaussian Mean Shift Clustering
 
 By use of [this script](scripts/clustering_dimensionalityreduction_pseudotime_git.R) we performed alternative dimensionality reduction methods (diffusion map, umap), alternative clustering methods (flowsom, phenograph) and inferred a cellular trajectory (slingshot). The results of this script are saved in [this data frame](df.csv)
 
-The results can be reproduced by loading the [clustered fcs files](HSNE_clusters_CD4/) and use of this [R markdown file](markdowns/clustering_dimensionalityreduction_pseudotime.RMD)
+The results can be reproduced by loading the [clustered fcs files](HSNE_clusters_CD4/) and use of this [R markdown file](markdown_files/markdown_clustering_dimensionalityreduction_pseudotime.Rmd)
 
-The figures can be reproduced by loading the [data frame](df.csv) and use of this [R markdown file](markdowns/visualization.RMD) 
+The figures can be reproduced by loading the [data frame](df.csv) and use of this [R markdown file](markdown_files/markdown_visualization.Rmd) 
 
 To view the knitted markdown files click [here](markdown/)
 

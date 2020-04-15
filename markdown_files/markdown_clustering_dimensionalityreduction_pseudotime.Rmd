@@ -39,15 +39,15 @@ Provide the directory of the fcs files
 dirFCS = '//vf-d3-home/d3home$/jemelsen/MyDocs/GitHub/Single-cell-analysis-flow-cytometry/HSNE_clusters_CD4'
 ```
 
-Optional: when loading clustered fcs files from cytosplore, provide the directory of the text file 'CSPLR_ST.txt'. Cytosplore exports this file upon running the HSNE. This file contains the decoding of the sample numbers.
+Optional: when loading clustered fcs files from cytosplore, provide the directory of the text file 'CSPLR_ST.txt'. Cytosplore exports this file upon running the HSNE. This file contains the decoding of the sample numbers to the original file name
 ```{r sampletag code directory}
 pathST = '//vf-d3-home/d3home$/jemelsen/MyDocs/GitHub/Single-cell-analysis-flow-cytometry/HSNE_clusters_CD4/CSPLR_ST.txt'
 ```
 
+
+Define a function to read multiple fcs files from a directory 'dir' into a single data.frame:
+NB: The column in the output named 'fileName' tracks the original file where each cell came from.
 ```{r define function, message=FALSE, warning=FALSE}
-## Defining a function to read multiple fcs files from a directory 'dir' into a single data.frame:
-# NB: The column in the output named 'fileName' tracks the original file where each cell came from.
-# Optionally perform remapping of column 'CSPLR_ST' holding cytosplore sample numbers to actual names:
 read.flowdat <- function(dir,path_CSPLR_ST=""){
   # Read:
   filepaths <- list.files(path=dir,pattern = ".fcs", full.names=TRUE)
@@ -72,7 +72,8 @@ read.flowdat <- function(dir,path_CSPLR_ST=""){
 ```
 
 Read fcs files
-```{r read fcs files, include=FALSE}
+Optionally: perform remapping of sampletag 'CSPLR-ST' to original file name
+```{r read fcs files, results='hide', message=FALSE, warning=FALSE}
 df <- read.flowdat(dir=dirFCS,path_CSPLR_ST = pathST)
 ```
 
@@ -97,7 +98,7 @@ colnames(df)
 ```
 
 Provide the column numbers, and choose the number of clusters
-```{r flowsom, include=FALSE, message=FALSE, warning=FALSE}
+```{r flowsom, results='hide'}
 flowsom <- FlowSOM(input = dirFCS, 
                 transform = FALSE,
                 scale = FALSE,
