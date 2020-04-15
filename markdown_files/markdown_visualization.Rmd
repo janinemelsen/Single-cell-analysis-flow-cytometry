@@ -47,6 +47,7 @@ viz.dm <- function(dat,dr, param.name,limits=NULL){
 ```
 
 Define the parameters for which you would like generate plots
+
 First check the order of columns
 ```{r parameter definition}
 colnames(df)
@@ -160,13 +161,14 @@ ggplot(counts_percofsample, aes(x=cluster, y=frequency, fill=cluster))+geom_bar(
 
 ### Visualize pseudotime
 
-######If you would like to use other clusters, adjust 'merged_HSNE' to clusters_flowsom', for instance
-######If there are more or less lineages identified adjust the number of curve columns
+If you would like to use other clusters, adjust 'merged_HSNE' to clusters_flowsom', for instance
+
+If there are more or less lineages identified adjust the number of curve columns
 ```{r pseudotime}
 pseudotimevalues <- df%>%select(c(DC1, DC2,clusterID=merged_HSNE, curve1, curve2, curve3))
 ```
 
-Plot the lineages: cells are colored by pseudotime
+Preparation of table and color palette for visualization of lineages
 ```{r plot lineages}
 #reshape table 
 pseudotimevalues <- melt(pseudotimevalues, id.vars=c('clusterID', 'DC1', 'DC2'), variable.name='lineage', value.name = 'pseudotime')
@@ -179,8 +181,10 @@ pseudotimevaluesexclNA <- pseudotimevalues%>%filter(pseudotime!='NA')
 
 #generate colorpalette
 colors <- colorRampPalette(rev(brewer.pal(11, 'Spectral'))[-6])(100)
+```
 
-#ggplot of each lineage colored by either pseudotime
+Plot the lineages: cells are colored by pseudotime
+```{r, fig.height=3, fig.width=10}
 ggplot(pseudotimevaluesexclNA%>%arrange(pseudotime), aes(x=DC1, y=DC2))+geom_point(aes(color=pseudotime),size=0.1, alpha=0.3) +facet_wrap(~lineage)+scale_color_gradientn(colours=colors)+theme_bw()+theme(panel.grid.major = element_blank(), panel.grid.minor=element_blank())
 ```
 
