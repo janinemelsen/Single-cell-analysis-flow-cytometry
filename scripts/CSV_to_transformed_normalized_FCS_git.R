@@ -7,6 +7,7 @@ install.packages("dplyr")
 BiocManager::install("Biobase")
 BiocManager::install("flowCore")
 BiocManager::install("flowVS")
+BiocManager::install("flowStats")
 
 ###############################
 ### LOAD REQUIRED PACKAGES ####
@@ -16,6 +17,7 @@ library(flowCore)
 library(Biobase)
 library(dplyr)
 library(flowVS)
+library(flowStats)
 
 ###############################
 ##### LOAD PREPARED DATA ######
