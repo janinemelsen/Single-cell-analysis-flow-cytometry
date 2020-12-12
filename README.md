@@ -1,6 +1,8 @@
 # Single-cell-analysis-flow-cytometry
 To reveal the cellular heterogeneity within flow cytometric data, clustering analysis and pseudotime analysis can be performed. Visualization can performed by dimensionality reduction. Here we demonstrate the different steps required to perform these analyses.
 
+For more details, please read the paper: https://www.jimmunol.org/content/early/2020/06/25/jimmunol.1901530
+
 ### 1. Data preprocessing (compensation, export population, transformation and normalization)
 [R script](scripts/CSV_to_transformed_normalized_FCS_git.R)
 
