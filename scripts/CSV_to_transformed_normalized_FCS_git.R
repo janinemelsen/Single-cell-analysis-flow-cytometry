@@ -1,3 +1,6 @@
+
+#Note the flowVS package is deprecated and not available on Bioconductor when using the newest R version. Please use R version 4.0.0 to install flowVS.
+
 ###############################
 ## INSTALL REQUIRED PACKAGES ##
 ###############################
