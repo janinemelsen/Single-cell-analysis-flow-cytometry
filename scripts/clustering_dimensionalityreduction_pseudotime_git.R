@@ -111,7 +111,7 @@ flowsom <- FlowSOM(input = dirFCS,
                 seed = 100)
 
 # Get metaclustering per cell
-clusters_flowsom <- as.factor(flowsom$FlowSOM$map$mapping[,1])
+clusters_flowsom <- as.factor(flowsom$map$mapping[,1])
 levels(clusters_flowsom) <- flowsom$metaclustering
 
 #add flowsom clusters to dataframe
