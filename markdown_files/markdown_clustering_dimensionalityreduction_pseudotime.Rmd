@@ -109,7 +109,7 @@ flowsom <- FlowSOM(input = dirFCS,
 
 Retrieve the cluster assignment per cell and add the flowsom clusters to the data frame
 ```{r add clusters to df, message=FALSE, warning=FALSE}
-clusters_flowsom <- as.factor(flowsom$FlowSOM$map$mapping[,1])
+clusters_flowsom <- as.factor(flowsom$map$mapping[,1])
 levels(clusters_flowsom) <- flowsom$metaclustering
 
 df <- cbind(df, clusters_flowsom)
