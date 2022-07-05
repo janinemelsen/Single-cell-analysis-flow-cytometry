@@ -218,7 +218,7 @@ ggplot(df, aes(x=umap_1, y=umap_2, color=as.factor(clusters_phenograph)))+geom_p
 #############################
 ######## FREQUENCIES ########
 #############################
-# As an example, we show the cluster frequencies of the HSNE clusters. To check the other cluster frequencies, adjust df$clusters_HSNE
+# As an example, we show the cluster frequencies of the HSNE clusters. To check the other cluster frequencies, adjust df$clusters_HSNE and change sampleID to fileName.
 # check frequency of each cluster per sample
 counts <- as.data.frame.matrix(table(df$sampleID,df$clusters_HSNE))
 
